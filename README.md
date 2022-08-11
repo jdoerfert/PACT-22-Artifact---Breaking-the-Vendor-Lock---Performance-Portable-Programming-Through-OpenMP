@@ -1,0 +1,1 @@
+# -PACT-22-Breaking-the-Vendor-Lock-Performance-Portable-Programming-Through-OpenMP-Artifact-
