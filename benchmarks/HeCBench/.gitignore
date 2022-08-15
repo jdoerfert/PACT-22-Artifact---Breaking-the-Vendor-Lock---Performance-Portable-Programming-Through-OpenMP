@@ -1,0 +1,14 @@
+*~
+*.txt
+*.bin
+*.o
+*.ppm
+*.csv
+*.bak
+*.traindata
+*.swp
+*.out
+*.json
+*.log
+*.yaml
+dpct_output

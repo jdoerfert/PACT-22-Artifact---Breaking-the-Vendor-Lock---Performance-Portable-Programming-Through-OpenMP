@@ -1,0 +1,61 @@
+#===============================================================================
+# User Options
+#===============================================================================
+
+# Compiler can be set below, or via environment variable
+CC = clang++
+OPTIMIZE  = no 
+DEBUG     = no
+
+#===============================================================================
+# Program name & source code list
+#===============================================================================
+
+program = xsbench
+
+source = \
+Main.cu \
+io.cu \
+Simulation.cu \
+GridInit.cu \
+XSutils.cu \
+Materials.cu
+
+obj = $(source:.cu=.o)
+
+#===============================================================================
+# Sets Flags
+#===============================================================================
+
+# Standard Flags
+CFLAGS := -save-temps  -fopenmp -foffload-lto -cudaomp --offload=amdgcn-amd-amdhsa --offload-arch=gfx908 -fopenmp-new-driver -fgpu-rdc -foffload-lto -nocudainc -nocudalib 
+
+# Linker Flags
+LDFLAGS = -lm -lomptarget -mllvm -amdgpu-early-inline-all=true -mllvm -amdgpu-function-calls=false 
+
+# Debug Flags
+ifeq ($(DEBUG),yes)
+  CFLAGS += -g
+  LDFLAGS  += -g
+endif
+
+# Optimization Flags
+ifeq ($(OPTIMIZE),yes)
+  CFLAGS += -O3
+endif
+
+#===============================================================================
+# Targets to Build
+#===============================================================================
+
+$(program): $(obj) XSbench_header.h Makefile
+	$(CC) $(CFLAGS) $(obj) -o $@ -lm -lomptarget 
+
+%.o: %.cu XSbench_header.h Makefile
+	$(CC) $(CFLAGS) -c $< -o $@
+
+clean:
+	rm -rf $(program) $(obj) *.o *.bc *.cui *.o *.ll *.s
+
+run: $(program)
+	./$(program) -s small -m event

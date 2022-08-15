@@ -1,0 +1,66 @@
+#===============================================================================
+# User Options
+#===============================================================================
+
+# Compiler can be set below, or via environment variable
+CC        = nvcc
+OPTIMIZE  = yes
+DEBUG     = no
+ARCH      = sm_60
+
+#===============================================================================
+# Program name & source code list
+#===============================================================================
+
+program = axhelm
+
+#===============================================================================
+# Sets Flags
+#===============================================================================
+
+# Standard Flags
+CFLAGS := -std=c++14 -Xcompiler -Wall -arch=$(ARCH) \
+          -Ddfloat=float -Ddlong=int 
+
+# Linker Flags
+LDFLAGS = BlasLapack/libBlasLapack.a -lgfortran
+
+# Debug Flags
+ifeq ($(DEBUG),yes)
+  CFLAGS += -g
+  LDFLAGS  += -g
+endif
+
+
+# Optimization Flags
+ifeq ($(OPTIMIZE),yes)
+  CFLAGS += -O3
+endif
+
+#===============================================================================
+# Targets to Build
+#===============================================================================
+all: build
+
+build: $(program)
+
+main.o : main.cu axhelmKernel.cpp axhelmReference.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
+	
+meshBasis.o : meshBasis.cpp meshBasis.hpp
+	$(CC) $(CFLAGS) -c $< -o $@
+
+BlasLapack/libBlasLapack.a: 
+	cd BlasLapack && make -j8 && cd ..
+
+$(program): main.o meshBasis.o BlasLapack/libBlasLapack.a 
+	$(CC) $(CFLAGS) $+ -o $@ $(LDFLAGS)
+
+clean:
+	cd BlasLapack && make clean && cd ..
+	rm -rf $(program) main.o meshBasis.o 
+
+# run one- and three-dimensional kernels
+run: $(program)
+	./$(program) 1 8000 100
+	./$(program) 3 8000 100
